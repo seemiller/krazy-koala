@@ -1,10 +1,10 @@
 # Rails - From the Closet To Kubernetes - Deployment
 
-For 11 of the last 14 years, I helped to develop and maintain a Ruby on Rails application, Pivotal Tracker. I got to see almost the entire lifecycle of this application. When I joined the Tracker team at Pivotal Labs in mid 2007, the app already had its core functionality, but it needed its edges rounded out. For our use as an internal project management application, those rough edges were ok, but we worked to round them out and make it a full-fledged product. 
+For 11 of the last 14 years, I helped to develop and maintain a Ruby on Rails application, Pivotal Tracker. I got to see almost the entire lifecycle of this application. When I joined the Tracker team at Pivotal Labs in mid 2007, the app already had its core functionality, but it needed its edges rounded out. For our use as an internal project management application, those rough edges were ok, but we worked to round them out and make it a full-fledged product.
 
 Pivotal Tracker was wildly popular within the company, and our clients loved using it too. Almost too much. A common question when a client engagement neared its end was "Can we continue to use Tracker?". Or when they told their friends about it and then the friends called up asking if they could use it. That was a difficult question to answer, as the answer was always no. Tracker was part of our secret sauce and was for internal use only or while there was an active engagement with a client. We also lacked a number of account management features, settings and permissions. Tracker performed its core project management mission admirably, but yeah, rough edges prevented us from allowing outside or public use.
 
-So we set out to smooth those rough edges. Plans were made to add those missing account management features so that we could safely allow outside use without fear of someone accessing a client project. We also added a subscription service so that we could charge users for use of the application. Companies have to keep the lights on somehow right? 
+So we set out to smooth those rough edges. Plans were made to add those missing account management features so that we could safely allow outside use without fear of someone accessing a client project. We also added a subscription service so that we could charge users for use of the application. Companies have to keep the lights on somehow right?
 
 ## In the Closet
 
@@ -66,11 +66,11 @@ So if I were to start this story all over again now, I would most definitely sta
 
 So let's dive in and see what we need to deploy a Ruby on Rails application on Kubernetes.
 
-  - Rails app
-  - Container
-  - Kubernetes cluster
-  - Database Deployment
-  - Application Deployment
+- Rails app
+- Container
+- Kubernetes cluster
+- Database Deployment
+- Application Deployment
 
 In developing this guide, I used the following hardware, software, and services.
 
@@ -98,7 +98,7 @@ rails new rails-blog --minimal --database mysql --webpack=react
 
 ### Container
 
-Kuberentes is really nothing more than an extensible container orchestration platform. So we need to put our application into a container. We can do this with a Dockerfile. Change into the rails-blog directory and lets take a look at the Dockerfile.
+Kubernetes is really nothing more than an extensible container orchestration platform. So we need to put our application into a container. We can do this with a Dockerfile. Change into the rails-blog directory and lets take a look at the Dockerfile.
 
 ```shell
 cd rails-blog
@@ -161,7 +161,7 @@ kubectl create namespace blog
 kubectl label namespace blog app=blog
 ```
 
-An equivalent manifest file is located in the `kuberentes` directory that could be applied instead.
+An equivalent manifest file is located in the `kubernetes` directory that could be applied instead.
 
 ```shell
 kubectl apply --filename kubernetes/namespace.yaml
@@ -171,14 +171,14 @@ Learn more about [namespaces](https://kubernetes.io/docs/concepts/overview/worki
 
 ### Database
 
-If you have any experience at all with Rails, you know that you can't do anything without a database. Ok, you can serve static files, but there are better ways to do that than by running a Rails server. Personally, I'm not a huge fan of running a database on any type of virtual or containerized platform. In my opinion, a database should be installed on a big honkin' bare metal server with lots of CPU, lots of RAM and lots of disk. And if you can afford it, there's an identical machine setting next to it in the rack. Except this other server is on a different electrical circuit and network stack. If you can't have bare metal, opt for a service like AWS RDS or GCP CloudSQL. The managed database services will work pretty well for most use cases, and they come with bells and whistles like snapshots, backups, redundancies in different regions and zones. Pivotal Tracker started with MySQL running alongside the Rails application in the closet. At BlueBox we had [Percona](https://www.percona.com/software/mysql-database/percona-server) running on bare-metal, and it was awesome. AWS RDS and GCP CloudSQL rounded out our databases in the Cloud. 
+If you have any experience at all with Rails, you know that you can't do anything without a database. Ok, you can serve static files, but there are better ways to do that than by running a Rails server. Personally, I'm not a huge fan of running a database on any type of virtual or containerized platform. In my opinion, a database should be installed on a big honkin' bare metal server with lots of CPU, lots of RAM and lots of disk. And if you can afford it, there's an identical machine setting next to it in the rack. Except this other server is on a different electrical circuit and network stack. If you can't have bare metal, opt for a service like AWS RDS or GCP CloudSQL. The managed database services will work pretty well for most use cases, and they come with bells and whistles like snapshots, backups, redundancies in different regions and zones. Pivotal Tracker started with MySQL running alongside the Rails application in the closet. At BlueBox we had [Percona](https://www.percona.com/software/mysql-database/percona-server) running on bare-metal, and it was awesome. AWS RDS and GCP CloudSQL rounded out our databases in the Cloud.
 
 However, for this exercise, we'll deploy plain old MySQL to our cluster. Why MySQL and not Postgres or some other database? To be honest, it's what I've always used. Pivotal Tracker used it for years, and I used it before joining Pivotal Labs. It's what I know and am comfortable with. It might not be web scale, but it gets the job done. So that's what I'm going to deploy. It also helps that the Kubernetes documentation has a nice [example](https://kubernetes.io/docs/tutorials/stateful-application/mysql-wordpress-persistent-volume/) already worked up with MySQL, which I've drawn inspiration from.
 
 In deploying our MySQL database, we need to declare three things to Kubernetes:
 
 - Service
-- Persistent Volume Claim
+- Persistent Volume/Claim
 - Deployment
 
 Let's start with the service. The service will make the database application available to the other pods in the cluster. The selector `app: blog` will allow the pods in our future Rails deployment to map to the correct service. By specifying `clusterIP: None` we are disabling load-balancing and not allocating a cluster IP address. We will have to reference our service by DNS. MySQL's well known port is 3306, so we declare the service should use 3306.
@@ -213,14 +213,30 @@ Learn more about [services](https://kubernetes.io/docs/concepts/services-network
 
 ### Persistent Volume Claim
 
-A database needs a disk to write its data to. Otherwise, we might as well use /dev/null, which I hear is fast and web scale. Kubernetes provides disk via Persistent Volume Claims, or pvc's. Since this is just an example application, we don't need much, just a small disk that provides Read/Write access to a single node. We'll allocate the disk space here, and wire it up in the deployment.
+A database needs a disk to write its data to. Otherwise, we might as well use /dev/null, which I hear is fast and web scale. Kubernetes provides disk via Persistent Volume Claims, or pvc's. Since this is just an example application, we don't need much, just a small disk that provides Read/Write access to a single node. We'll allocate the disk space here, and wire it up in the deployment. We will declare a persistant volume, and then a claim to that volume.
 
 ```yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysql-pv
+spec:
+  capacity:
+    storage: 1Gi
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  hostPath:
+    path: "/var/lib/mysql"
+  claimRef:
+    name: mysql-pvc
+    namespace: blog
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: mysql-pv-claim
+  name: mysql-pvc
+  namespace: blog
   labels:
     app: blog
 spec:
@@ -229,15 +245,18 @@ spec:
   resources:
     requests:
       storage: 1Gi
+  volumeName: mysql-pv
 ```
+
+> Note that we're using a hostPath in the Persistent Volume. This is really only good for single node clusters. If you really want this disk to work in a more production like environment, you'll want to use a different [type of persistent volume](https://kubernetes.io/docs/concepts/storage/persistent-volumes/#types-of-persistent-volumes) that aligns with your infrastructure.
 
 Create the persistent volume claim by applying the manifest.
 
 ```shell
-kubectl apply --filename kubernetes/mysql-service.yaml
+kubectl apply --filename kubernetes/mysql-storage.yaml
 ```
 
-Learn more about [persistent volume claims](https://kubernetes.io/docs/concepts/services-networking/service/) in the official Kubernetes documentation.
+Learn more about [persistent volume/claims](https://kubernetes.io/docs/concepts/storage/persistent-volumes/) in the official Kubernetes documentation.
 
 ### Deployment
 
@@ -246,6 +265,7 @@ The Deployment tells Kubernetes about the containerized application that you wan
 If you notice in the container spec, there is a reference to a secret for the root user password. In conjunction with creating this deployment, we need to create a secret. We'll need a generic secret created from a literal value. That value will get base64 encoded and stored in the Kubernetes etcd process. The deployment will inject this value into the environment of the container that is running the database. There are other ways and means of handling secrets, but that's a topic for another time.
 
 Create the secret.
+
 ```shell
 kubectl create secret generic mysql-pass --from-literal=password=super-secret-password --namespace=blog
 ```
@@ -311,7 +331,7 @@ spec:
       volumes:
       - name: mysql-persistent-storage
         persistentVolumeClaim:
-          claimName: mysql-pv-claim
+          claimName: mysql-pvc
 ```
 
 Check the status of the deployment.
@@ -521,7 +541,7 @@ kubectl exec deployment/rails -it --namespace blog -- rails db:create db:migrate
 
 The final step in making the Blog application available is to create an Ingress. An ingress creates a load balancer or endpoint that external processes can use to make requests of services running inside our cluster. Typically, this is for HTTP requests.
 
-You can create an ingress on the fly using the kubectl command. In this command, we are mapping all requests to this ingress to port 80 of the `rails` service. If you recall, we created a service for the Rails app that listens on port 80 and targets port 3000 on any object with an `app: rails` label. 
+You can create an ingress on the fly using the kubectl command. In this command, we are mapping all requests to this ingress to port 80 of the `rails` service. If you recall, we created a service for the Rails app that listens on port 80 and targets port 3000 on any object with an `app: rails` label.
 
 ```shell
 kubectl create ingress rails --namespace blog --rule="/*=rails:80"
@@ -566,4 +586,3 @@ Learn more about [ingresses](https://kubernetes.io/docs/concepts/services-networ
 ## Conclusion
 
 We've come a long way from deploying apps on noisy servers running the closet. There's still something to be said for the simplicity of just racking a server, installing an OS, deploying some code, updating DNS and profiting. When you're just starting out, or for a toy/learning application that's a perfectly viable route. But eventually that model doesn't scale - especially if you're trying to grow a business around it. Having a platform like Kubernetes to build your application on makes a world of difference. With many proven patterns, software services, and a thriving user community to call upon for help, you can focus on your application and just know that the deployment is not a concern. As a DevOps/SRE/Full Stack Engineer, Kubernetes would have made my life so much easier on this journey from the closet to the Cloud.
-
