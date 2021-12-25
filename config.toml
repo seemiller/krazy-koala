@@ -1,0 +1,15 @@
+baseURL = 'http://example.org/'
+languageCode = 'en-us'
+title = 'Tales from the Command Line'
+theme = "tale"
+
+[params]
+  title = "Tales from the Command Line"
+  SEOTitle = "Tales from the Command Line"
+  keyword = "Nicholas, Seemiller, Rails, Pivotal, Tracker, Kubernetes"
+
+  [params.social]
+  rss            = true
+  linkedin       = "https://www.linkedin.com/in/nick-seemiller-6a48452/"
+  github         = "https://github.com/seemiller"
+  medium         = "https://medium.com/@seemiller"

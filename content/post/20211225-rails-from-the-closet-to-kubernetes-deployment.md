@@ -1,6 +1,12 @@
+---
+title: "Rails - From the Closet To Kubernetes - Deployment"
+date: 2021-12-25T15:43:53-07:00
+draft: true
+---
+
 # Rails - From the Closet To Kubernetes - Deployment
 
-For 11 of the last 14 years, I helped to develop and maintain a Ruby on Rails application, Pivotal Tracker. I got to see almost the entire lifecycle of this application. When I joined the Tracker team at Pivotal Labs in mid 2007, the app already had its core functionality, but it needed its edges rounded out. For our use as an internal project management application, those rough edges were ok, but we worked to round them out and make it a full-fledged product.
+From mid-2007 until early 2020, I helped to develop and maintain a Ruby on Rails application, Pivotal Tracker. I got to see almost the entire lifecycle of this application. When I joined the Tracker team at Pivotal Labs in mid 2007, the app already had its core functionality, but it needed its edges rounded out. For our use as an internal project management application, those rough edges were ok, but we worked to round them out and make it a full-fledged product.
 
 Pivotal Tracker was wildly popular within the company, and our clients loved using it too. Almost too much. A common question when a client engagement neared its end was "Can we continue to use Tracker?". Or when they told their friends about it and then the friends called up asking if they could use it. That was a difficult question to answer, as the answer was always no. Tracker was part of our secret sauce and was for internal use only or while there was an active engagement with a client. We also lacked a number of account management features, settings and permissions. Tracker performed its core project management mission admirably, but yeah, rough edges prevented us from allowing outside or public use.
 
@@ -30,7 +36,7 @@ There was still the issue of the seemingly random outages. Two to 4 times a week
 
 ## Hybrid Cloud
 
-These experiences left a sour taste for infrastructure where our virtual machines co-mingled with other "noisy neighbors". Unfortunately, this meant we started the search for a new hosting provider again. It wasn't long before we found a shop out of Seattle, Washington, called BlueBox. I don't recall what specifically drove us to chose them, but they had a hosting model to our liking. We could create an environment that was a hybrid between virtual and bare-metal servers. Application and utility servers were all virtual. We could easily spin up others for memcached, delayed jobs, and easily create demo and staging environments. The bare metal servers hosting all of those virtual machines were ours - no more noisy neighbors. Much to my delight, the database was also back on bare-metal.  
+These experiences left a sour taste for infrastructure where our virtual machines co-mingled with other "noisy neighbors". Unfortunately, this meant we started the search for a new hosting provider again. It wasn't long before we found a shop out of Seattle, Washington, called BlueBox. I don't recall what specifically drove us to chose them, but they had a hosting model to our liking. We could create an environment that was a hybrid between virtual and bare-metal servers. Application and utility servers were all virtual. We could easily spin up others for memcached, delayed jobs, and easily create demo and staging environments. The bare metal servers hosting all of those virtual machines were ours - no more noisy neighbors. Much to my delight, the database was also back on bare-metal.
 
 BlueBox was a fantastic place to call home. The servers were fast and reliable. Their support was top-notch too. They had a small staff, but frequently helped us out with some code or database optimizations when we got stuck. We basically settled in for 4 or 5 years. This comfort did have a bit of a downside - we missed out on the beginnings of the Cloud era, and all the innovations that came with it.
 
@@ -577,7 +583,7 @@ NAME    CLASS    HOSTS   ADDRESS                                                
 rails   <none>   *       a65e9ab6f9ea449149814be66c783071-339151308.us-east-1.elb.amazonaws.com   80      5m
 ```
 
-Your IP address will vary depending on where your cluster is running. AWS provides a nice, unmemorable address that can easily be mapped to a domain name in their Route53 DNS service. In the spirit of keeping things simple, I'm going to save the details of updating DNS and implementing TLS for another story.  
+Your IP address will vary depending on where your cluster is running. AWS provides a nice, unmemorable address that can easily be mapped to a domain name in their Route53 DNS service. In the spirit of keeping things simple, I'm going to save the details of updating DNS and implementing TLS for another story.
 
 With the ingress created, copy/paste the address into your favorite browser and enjoy the sample Rails Blog application.
 
