@@ -1,4 +1,4 @@
-baseURL = 'http://example.org/'
+baseURL = 'https://seemiller.github.io/'
 languageCode = 'en-us'
 title = 'Tales from the Command Line'
 theme = "tale"
