@@ -6,7 +6,7 @@ draft: true
 
 # Rails - From the Closet To Kubernetes - Deployment
 
-From mid-2007 until early 2020, I helped to develop and maintain a Ruby on Rails application, Pivotal Tracker. I got to see almost the entire lifecycle of this application. When I joined the Tracker team at Pivotal Labs in mid 2007, the app already had its core functionality, but it needed its edges rounded out. For our use as an internal project management application, those rough edges were ok, but we worked to round them out and make it a full-fledged product.
+Part 1. From mid-2007 until early 2020, I helped to develop and maintain a Ruby on Rails application, Pivotal Tracker. I got to see almost the entire lifecycle of this application. When I joined the Tracker team at Pivotal Labs in mid 2007, the app already had its core functionality, but it needed its edges rounded out. For our use as an internal project management application, those rough edges were ok, but we worked to round them out and make it a full-fledged product.
 
 Pivotal Tracker was wildly popular within the company, and our clients loved using it too. Almost too much. A common question when a client engagement neared its end was "Can we continue to use Tracker?". Or when they told their friends about it and then the friends called up asking if they could use it. That was a difficult question to answer, as the answer was always no. Tracker was part of our secret sauce and was for internal use only or while there was an active engagement with a client. We also lacked a number of account management features, settings and permissions. Tracker performed its core project management mission admirably, but yeah, rough edges prevented us from allowing outside or public use.
 
