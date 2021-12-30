@@ -45,7 +45,7 @@ A Rails app is an ideal application for deployment and scaling with Knative. The
 - Stateless - Rails applications don't necessarily need to track state locally, that's what the database is for!
 - Do not require local storage - Rails applications can get all configuration from ConfigMap and Secret.
 
-In this post I want to show how to set up a Rails application running on Kubernetes with Knative serving demonstrating the scale to zero feature. I've already created a Rails application that we can use for this, it's the Rails Blog application that is detailed in the [Ruby on Rails - Getting Started](https://guides.rubyonrails.org/v6.0/getting_started.html) guide. I've already followed the guide and committed it to a GitHub [repository](https://github.com/seemiller/rails-blog). This demonstration will be building off of the Tanzu Community Edition cluster that was deployed to AWS in [Part 1](https://example.com).
+In this post I want to show how to set up a Rails application running on Kubernetes with Knative serving demonstrating the scale to zero feature. I've already created a Rails application that we can use for this, it's the Rails Blog application that is detailed in the [Ruby on Rails - Getting Started](https://guides.rubyonrails.org/v6.0/getting_started.html) guide. I've already followed the guide and committed it to a GitHub [repository](https://github.com/seemiller/rails-blog). This demonstration will be building off of the Tanzu Community Edition cluster that was deployed to AWS in [Part 1](https://talesfromthecommandline.com/post/20211225-rails-from-the-closet-to-kubernetes-deployment/).
 
 ## Setup and Installation
 

@@ -469,7 +469,7 @@ data:
 ```
 
 ```shell
-kubectl apply --filename kubernetes/rails-secret.yaml
+kubectl apply --filename kubernetes/rails-secrets.yaml
 ```
 
 > For a real production application you of course would not want to commit your secret values to your source control. There are better and more secure means to handle secrets that are the subject of another story.
@@ -547,6 +547,14 @@ kubectl exec deployment/rails -it --namespace blog -- rails db:create db:migrate
 
 The final step in making the Blog application available is to create an Ingress. An ingress creates a load balancer or endpoint that external processes can use to make requests of services running inside our cluster. Typically, this is for HTTP requests.
 
+Before creating the ingress, we must first install an ingress controller. Ingress controllers are necessary to wire up the networking on your cluster to that of the underlying infrastructure, such as AWS or Azure. We'll use Contour for this.
+
+```shell
+tanzu package install contour \
+  --package-name contour.community.tanzu.vmware.com \
+  --version 1.18.1
+```
+
 You can create an ingress on the fly using the kubectl command. In this command, we are mapping all requests to this ingress to port 80 of the `rails` service. If you recall, we created a service for the Rails app that listens on port 80 and targets port 3000 on any object with an `app: rails` label.
 
 ```shell
@@ -583,7 +591,7 @@ NAME    CLASS    HOSTS   ADDRESS                                                
 rails   <none>   *       a65e9ab6f9ea449149814be66c783071-339151308.us-east-1.elb.amazonaws.com   80      5m
 ```
 
-Your IP address will vary depending on where your cluster is running. AWS provides a nice, unmemorable address that can easily be mapped to a domain name in their Route53 DNS service. In the spirit of keeping things simple, I'm going to save the details of updating DNS and implementing TLS for another story.
+Your IP address will vary depending on where your cluster is running. AWS provides a nice, unmemorable address that can easily be mapped to a domain name in their Route53 DNS service.
 
 With the ingress created, copy/paste the address into your favorite browser and enjoy the sample Rails Blog application.
 
