@@ -82,9 +82,8 @@ In developing this guide, I used the following hardware, software, and services.
 
 - Apple Macbook Pro
 - Amazon Web Services
-- ttl.sh
 - MySQL 8.0.27
-- Rails 6.1.4.1
+- Rails 6.1
 - Ruby 3.0.2
 - VMware Tanzu Community Edition
 
@@ -149,9 +148,9 @@ This is a pretty straight-forward Dockerfile. We start with the Ruby 3.0.2 base 
 Build the image and push it up.
 
 ```shell
-docker build --tag ttl.sh/seemiller/rails-blog:1d .
+docker build --tag <<your docker id>>/rails-blog .
 
-docker push ttl.sh/seemiller/rails-blog:1d
+docker push <<your docker id>>/rails-blog
 ```
 
 ### Kubernetes Cluster
@@ -499,7 +498,7 @@ spec:
     spec:
       containers:
       - name: rails
-        image: ttl.sh/seemiller/rails-blog:1d
+        image: seemiller/rails-blog
         ports:
         - containerPort: 3000
         env:
@@ -527,8 +526,8 @@ Wait for it to become available.
 kubectl get deployments --namespace blog
 
 NAME    READY   UP-TO-DATE   AVAILABLE   AGE
-mysql   1/1     1            1           3d16h
-rails   1/1     1            1           3d
+mysql   1/1     1            1           3m25s
+rails   1/1     1            1           9s
 ```
 
 Our Rails application is now deployed to Kubernetes!

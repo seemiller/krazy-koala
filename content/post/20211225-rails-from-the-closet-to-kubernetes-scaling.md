@@ -56,7 +56,7 @@ git clone git@github.com:seemiller/rails-blog.git
 cd rails-blog
 ```
 
-Before we install Knative, we need to first install [Contour](https://projectcontour.io/) as a prerequisite. Contour is an open source [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) provider. I'm using still using Tanzu Community Edition, so I'll install the Contour package.
+Before we install Knative, we need to first install [Contour](https://projectcontour.io/) as a prerequisite. Contour is an open source [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) provider. If you're continuing on from [Part 1](https://talesfromthecommandline.com/post/20211225-rails-from-the-closet-to-kubernetes-deployment/), this should already be installed. If not, go ahead and install it now..
 
 ```shell
 tanzu package install contour \
@@ -66,16 +66,17 @@ tanzu package install contour \
 
 Since I am going to use a [custom domain](https://knative.dev/docs/serving/using-a-custom-domain/), `k8squid.com`, I'll need to create a configuration file for the knative-serving package and configure the Route53 DNS.
 
-Create the configuration file.
+Create the configuration file. We'll use this later when installing knative-serving.
 
 ```shell
-cat knative-values.yaml <<EOF
+cat <<EOF > knative-values.yaml
 domain:
   type: real
-  name: k8squid.com
+  name: <<your-domain>>.com
+EOF
 ```
 
-Get the external IP of the Envoy Load Balancer. On Route 53's Hosted Zone page, confgure the `A` record for your domain to use this IP.
+Get the external IP of the Envoy Load Balancer. On Route 53's Hosted Zone page, configure the `A` record for your domain to use this IP.
 
 ```shell
 > kubectl get service --namespace projectcontour
@@ -90,17 +91,17 @@ With our prerequisites out of the way, we can install the Knative package.
 ```shell
 tanzu package install knative-serving \
   --package-name knative-serving.community.tanzu.vmware.com \
-  --version 1.0.0
-  --values-file knative-serving.yaml
+  --version 1.0.0 \
+  --values-file knative-values.yaml
 ```
 
 In another terminal, watch the knative-serving namespace to see the pods come up.
 
 ```shell
-kubectl get pods --namespace knative-serving --watch
+watch kubectl get pods --namespace knative-serving
 ```
 
-I still have my Rails blog application deployed from the previous walk-through. I'll need to remove that deployment, ingress and service before deploying the application with Knative.
+I still have my Rails blog application deployed from [Part 1](https://talesfromthecommandline.com/post/20211225-rails-from-the-closet-to-kubernetes-deployment/). I'll need to remove that deployment, ingress and service before deploying the application with Knative.
 
 ```shell
 kubectl delete --filename kubernetes/rails-deployment.yaml
@@ -113,7 +114,7 @@ kubectl delete --filename kubernetes/rails-service.yaml
 With the original deployment cleaned up, we can deploy the application using Knative. For that we need a Knative service manifest. It does seem a bit odd to be deploying our application in a service instead of a deployment, but that's just how it is. This is basically our original deployment, now in a Knative manifest.
 
 ```shell
-> cat kubernetes/rails-knative.yaml
+> cat kubernetes/rails-knative-service.yaml
 ```
 ```yaml
 apiVersion: serving.knative.dev/v1
@@ -128,7 +129,7 @@ spec:
     spec:
       containers:
         - name: rails
-          image: ttl.sh/seemiller/rails-blog:1d
+          image: seemiller/rails-blog
           ports:
           - containerPort: 3000
           env:
