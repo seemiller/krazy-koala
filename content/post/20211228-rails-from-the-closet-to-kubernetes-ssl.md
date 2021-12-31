@@ -24,90 +24,115 @@ Well, the next best thing is open source software that handles the automated par
 
 So let us take a look at using cert-manager and Let's Encrypt to secure our example Rails application. I've already created a Rails application that we can use for this, it's the Rails Blog application that is detailed in the [Ruby on Rails - Getting Started](https://guides.rubyonrails.org/v6.0/getting_started.html) guide. I've already followed the guide and committed it to a GitHub [repository](https://github.com/seemiller/rails-blog). This demonstration will be building off of the Tanzu Community Edition cluster that was deployed to AWS in [Part 1](https://talesfromthecommandline.com/post/20211225-rails-from-the-closet-to-kubernetes-deployment/).
 
+> This guide builds off of Part 1
 
-The first to step is to tell Kubernetes about the issuer.
+## Installation
 
-`cat clusterissuer-staging.yaml`
+After following the steps from Part 1, all we need to install here is the cert-manager package.
 
-This specifies an Automatic Certificate Management Environment, or ACME, issuer type.
-
-ACME Certificate authorities need to verify that the requester owns the domain. To perform this verification, the CA will issue a challenge.
-
-In this example the HTTP challenge method will be used.
-
-Also notice that we’re starting with the staging servers for Let’s Encrypt.
-
-
-The Production server is rate limited, so it is best to develop using staging before switching to production.
-
-I’ve prepared both staging and production issuers, let’
-
-`kubectl apply -f clusterissuer-staging.yaml -f clusterissuer-prod.yaml`
-
-Next is to configure our ingress.
-
-`cat ingress-staging.yaml`
-
-We’ve added annotations to reference
-
-* the issuer
-* Force redirects to SSL
-* And setup an ingress shim
-
-We then specify that the certificate should be
-
-* Stored in the wordpress-tls secret
-* And that the cert is for the wordpress.k8squid.com host
-
-Let’s apply that file,
-
-`kubectl apply -f ingress-staging.yaml`
-
-And then watch for our certificate to become ready.
-
-`kubectl get certificates`
-
-We can inspect the certificate to see its details.
-
-kubectl get certificate/wordpress-tls -o yaml | more
-
-Items of note are the status timestamps indicating expiration and renewal dates times.
-
-And if we are really curious, we can always extract the actual certificate from the secret...
-
+```shell
+tanzu package install cert-manager \
+  --package-name cert-manager.community.tanzu.vmware.com \
+  --version 1.5.3
 ```
-kubectl get secret/wordpress-tls -o json | jq -r '.data."tls.crt"' | base64 -d | openssl x509 -noout -text | more
-``` 
 
-Going back to the browser,
+## Configuration
 
-refreshing the page redirects us to a secure URL, but the certificate isn’t trusted.
+The first to step is to tell Kubernetes who is going to issue the certificates. This is done with an issuer. There are 2 types of issuers, an `Issuer` that is restricted to a specific namespace, or a `ClusterIssuer` which can be used cluster wide. We'll use a `ClusterIssuer` here. 
 
-While the certificates from the Let’s Encrypt staging servers are real, the root certificate is not distributed, as these certs are only meant to used in the development and test of your workflow.
+```yaml
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    email: joe@example.com
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    solvers:
+    - http01:
+        ingress:
+          class: contour
+```
 
-Now that we know that the process is working, we’re ready to switch to the production servers and certificates.
+> Be sure to use your real email to get notifications from Let's Encrypt regarding the status of your certificates.
 
-Making the switch to production is quite easy,
+This issuer specifies an Automatic Certificate Management Environment, or ACME, issuer type. ACME Certificate authorities need to verify that the requester owns the domain. To perform this verification, the CA will issue a challenge. There are DNS and HTTP challenges. In this example, the HTTP challenge method will be used, and the ingress controller is Contour.
 
-There are 3 simple steps
+Also notice that we’re using the staging servers for Let’s Encrypt. The Production server is rate limited, so it is best to develop and demonstrate using staging before switching to production. The staging server also issues certificates that are not trusted. This is so that you can verify that your pipelines and environments are configured correctly before switching to real, production certificates.
 
-* The first is to update the ingress resource to reference the production issuer for Let’s Encrypt
-* `k edit ingress/wordpress`
-* and then delete the staging certificate and secret.
-* `kubectl delete certificate/wordpress-tls`
-* `kubectl delete secret/wordpress-tls`
-* Since the ingress is still in place, the declarative features of Kubernetes will kick in - the control loop pattern sees that a secret and certificate are being referenced but they doesn’t exist.
+The certificates issued by Let's Encrypt expire after 90 days. But as long as your processes are still up and running, the certs will automatically be renewed.
 
-* This causes the operator to request a new certificate and store it in a new secret.
+Apply the yaml for the cluster issuer, then verify that it is ready.
+```shell
+kubectl apply --filename kubernetes/clusterissuer-staging.yaml
+```
 
-Back to the browser, refreshing reveals a secure page.
+```shell
+> kubectl get clusterissuers
 
-So let's see how we fared according to our best practices.
+NAME                  READY   AGE
+letsencrypt-staging   True    28s
+```
 
-Let's inspect our certificate again,
+Next we need to update our ingress and instruct it to use TLS and request a certificate using the `letsencrypt-staging` cluster issuer via cert-manager. Our updated ingress will look like this:
 
-* `/Issuer` We are using a quiality certificate authority
-* `/Valid` Our Expiration date is 90 days out
-* `Alter` We are using a Subject Alternative Name and specific hostnames.
-* This certificate is being stored as a secret, so no human ever had to handle the actual certificate files.
-* And the entire process was automated through Kubernetes
+```yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: rails
+  namespace: blog
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+    ingress.kubernetes.io/force-ssl-redirect: "true"
+    kubernetes.io/tls-acme: "true"
+    kubernetes.io/ingress.class: contour
+spec:
+  tls:
+  - secretName: rails-blog-tls-secret
+    hosts:
+      - www.k8squid.com
+  rules:
+  - host: www.k8squid.com
+    http:
+      paths:
+      - backend:
+          service:
+            name: rails
+            port:
+              number: 80
+        path: /
+        pathType: Prefix
+```
+
+Patch the ingress for the Rails Blog. This will immediately make a request through cert-manager to Let's Encrypt to get a TLS certificate for our site.
+
+```shell
+kubectl apply --filename kubernetes/rails-ingress-tls.yaml 
+```
+
+Check for the certificate and the certificate request. Within a minute, we have a certificate!
+
+```shell
+> kubectl get certificate,certificaterequest --namespace blog
+
+NAME                                                READY   SECRET                  AGE
+certificate.cert-manager.io/rails-blog-tls-secret   True    rails-blog-tls-secret    1m
+
+NAME                                                             APPROVED   DENIED   READY   ISSUER                REQUESTOR                                         AGE
+certificaterequest.cert-manager.io/rails-blog-tls-secret-54b88   True                True    letsencrypt-staging   system:serviceaccount:cert-manager:cert-manager    1m
+```
+
+Going back to the browser and refreshing the page, we're redirected to a secure URL. Trust the certificate and enjoy your freshly secured site!
+
+## Conclusion
+
+All the concerns from the past are handled with ease. No more concerns about what provider to use, or how much will it cost, or handling private key files. If I had to it again, I would definitely consider using this process. With the combination of Kubernetes, cert-manager and Let's Encrypt, it has never been easier or quicker to secure a website. Best of all, it follows all the best practices:
+* Using a quality, trusted certificate authority
+* Short, 90 day expiration
+* No human ever had to handle the actual certificate files
+* The entire process can be automated
+* Free!
